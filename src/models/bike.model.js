@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 const bikeSchema = new mongoose.Schema(
   {
-    model: { type: String, required: true },
-    imageUrl: { type: String, required: true },
+    model: { type: String, required: true, unique: true },
+    imageUrl: { type: String, required: true, unique: true },
     locations: [
       {
         type: mongoose.Schema.Types.ObjectId,

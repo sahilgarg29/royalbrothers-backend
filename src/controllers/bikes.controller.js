@@ -15,4 +15,16 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.post("/", async (req, res) => {
+  try {
+    const bike = await Bikes.create(req.body);
+
+    return res.status(201).send(bike);
+  } catch (err) {
+    res
+      .status(500)
+      .send({ status: "fail", message: err.message, err: { err } });
+  }
+});
+
 module.exports = router;
