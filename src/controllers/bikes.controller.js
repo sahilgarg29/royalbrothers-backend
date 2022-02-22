@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const bikes = await Bikes.find({}).lean().exec();
+    const bikes = await Bikes.find({}).populate("locations").lean().exec();
 
     return res.status(200).send({ bikes });
   } catch (err) {
