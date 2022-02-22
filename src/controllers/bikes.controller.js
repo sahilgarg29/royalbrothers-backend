@@ -5,7 +5,29 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const bikes = await Bikes.find({}).populate("locations").lean().exec();
+    let bikes = await Bikes.find({})
+      .populate({
+        path: "locations",
+        populate: {
+          path: "city",
+        },
+      })
+      .lean()
+      .exec();
+
+    if (req.query.city) {
+      bikes = bikes.filter((bike) => {
+        bike.locations = bike.locations.filter((location) => {
+          return location.city.name == req.query.city;
+        });
+
+        return bike.locations.length > 0;
+      });
+    }
+
+    // if(req.query.city){
+    //   query = query.
+    // }
 
     return res.status(200).send({ bikes });
   } catch (err) {
