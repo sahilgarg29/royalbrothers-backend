@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const citySchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
+    imageUrl: { type: String, required: true },
   },
   {
     versionKey: false,
