@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
+    console.log(req.query);
     let bikes = await Bikes.find({})
       .populate({
         path: "locations",
@@ -25,11 +26,43 @@ router.get("/", async (req, res) => {
       });
     }
 
+    if (req.query.pickuptime && req.query.dropofftime) {
+      bikes = bikes.filter((bike) => {
+        bike.locations = bike.locations.filter((location) => {
+          console.log(location._id);
+          let bookedSlots = bike.bookedSlots;
+          let pt = new Date(req.query.pickuptime);
+          let dt = new Date(req.query.dropofftime);
+          let flag = true;
+          for (let i = 0; i < bookedSlots.length; i++) {
+            if (bookedSlots[i].location.toString() == location._id.toString()) {
+              if (
+                (bookedSlots[i].pickupTime > pt &&
+                  bookedSlots[i].pickupTime > dt) ||
+                (bookedSlots[i].dropoffTime < pt &&
+                  bookedSlots[i].dropoffTime < dt)
+              ) {
+                console.log("flag true");
+                continue;
+              } else {
+                flag = false;
+                console.log("flag");
+              }
+            }
+          }
+
+          return flag;
+        });
+
+        return bike.locations.length > 0;
+      });
+    }
+
     // if(req.query.city){
     //   query = query.
     // }
 
-    return res.status(200).send({ bikes });
+    return res.status(200).send({ total: bikes.length, bikes });
   } catch (err) {
     res
       .status(500)
