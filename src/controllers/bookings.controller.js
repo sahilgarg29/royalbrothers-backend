@@ -1,9 +1,11 @@
+require("dotenv").config();
 const express = require("express");
 const Bookings = require("../models/booking.model");
 const Bikes = require("../models/bike.model");
-
+const Razorpay = require("razorpay");
 const authenticate = require("../middlewares/authenticate");
 const router = express.Router();
+const crypto = require("crypto");
 
 router.get("/", async (req, res) => {
   try {
@@ -44,30 +46,73 @@ router.post("/", authenticate, async (req, res) => {
       return res.status(400).send({ message: "Not available" });
     }
 
-    const updatedBike = await Bikes.findByIdAndUpdate(req.body.bikeId, {
-      $push: {
-        bookedSlots: {
-          location: req.body.locationId,
-          pickupTime: pt,
-          dropoffTime: dt,
-        },
-      },
+    let diffInMill = dt - pt;
+
+    let hours = Math.round(Math.abs(diffInMill) / 36e5);
+
+    var instance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_SECRET_KEY,
     });
 
-    const booking = await Bookings.create({
-      user: req.user._id,
-      location: req.body.locationId,
-      bike: req.body.bikeId,
-      amount: req.body.amount,
-      pickupTime: new Date("2022-02-22T20:00:00Z"),
-      dropoffTime: new Date("2022-02-23T20:00:00Z"),
-    });
+    var options = {
+      amount: hours * bike.pricePerHour * 100, // amount in the smallest currency unit
+      currency: "INR",
+    };
+    instance.orders.create(options, async function (err, order) {
+      if (err) return res.status(500).send(err);
 
-    return res.status(201).send({ booking });
+      const booking = await Bookings.create({
+        user: req.user._id,
+        location: req.body.locationId,
+        bike: req.body.bikeId,
+        amount: hours * bike.pricePerHour,
+        pickupTime: pt,
+        dropoffTime: dt,
+        orderId: order.id,
+      });
+
+      return res.status(201).send({ booking });
+    });
   } catch (err) {
     return res
       .status(500)
       .send({ status: "fail", message: err.message, err: { err } });
+  }
+});
+
+router.post("/verify", authenticate, async (req, res) => {
+  try {
+    let body = req.body.razorpay_order_id + "|" + req.body.razorpay_payment_id;
+
+    var expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET_KEY)
+      .update(body.toString())
+      .digest("hex");
+    console.log("sig received ", req.body.razorpay_signature);
+    console.log("sig generated ", expectedSignature);
+
+    if (expectedSignature === req.body.razorpay_signature) {
+      const booking = await Bookings.findOneAndUpdate(
+        { orderId: req.body.razorpay_order_id },
+        { status: "success" }
+      );
+
+      const updatedBike = await Bikes.findByIdAndUpdate(booking.bike, {
+        $push: {
+          bookedSlots: {
+            location: booking.location,
+            pickupTime: booking.pickupTime,
+            dropoffTime: booking.dropoffTime,
+          },
+        },
+      });
+      return res.status(200).send({ booking });
+    } else {
+      return res.status(400).send({ message: "Invalid Payment Signature" });
+    }
+  } catch (err) {
+    return res.status(500).send({ message: err.message });
   }
 });
 

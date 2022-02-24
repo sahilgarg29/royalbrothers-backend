@@ -12,6 +12,8 @@ const BookingSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     pickupTime: { type: Date, required: true },
     dropoffTime: { type: Date, required: true },
+    status: { type: String, default: "pending" },
+    orderId: { type: String, required: true },
   },
   {
     versionKey: false,
