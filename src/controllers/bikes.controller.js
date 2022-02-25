@@ -16,6 +16,27 @@ router.get("/", async (req, res) => {
       .lean()
       .exec();
 
+    let diffInMill =
+      new Date(req.query.dropofftime) - new Date(req.query.pickuptime);
+
+    let hours = Math.round(Math.abs(diffInMill) / 36e5);
+
+    bikes.forEach((bike) => {
+      bike.amount = hours * bike.pricePerHour;
+    });
+
+    if (req.query.sortbyprice) {
+      if (req.query.sortbyprice == "asc") {
+        bikes.sort(function (a, b) {
+          return a.amount - b.amount;
+        });
+      } else if (req.query.sortbyprice == "desc") {
+        bikes.sort(function (a, b) {
+          return b.amount - a.amount;
+        });
+      }
+    }
+
     if (req.query.models) {
       let modelsArr = req.query.models.split(",");
 
