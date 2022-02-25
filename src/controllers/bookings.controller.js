@@ -30,7 +30,9 @@ router.post("/", authenticate, async (req, res) => {
     let dt = new Date(req.body.dropoffTime);
     flag = true;
     for (let i = 0; i < bookedSlots.length; i++) {
-      if (bookedSlots[i].location == req.body.locationId) {
+      if (
+        bookedSlots[i].location.toString() == req.body.locationId.toString()
+      ) {
         if (
           (bookedSlots[i].pickupTime > pt && bookedSlots[i].pickupTime > dt) ||
           (bookedSlots[i].dropoffTime < pt && bookedSlots[i].dropoffTime < dt)

@@ -16,6 +16,31 @@ router.get("/", async (req, res) => {
       .lean()
       .exec();
 
+    if (req.query.models) {
+      let modelsArr = req.query.models.split(",");
+
+      bikes = bikes.filter((bike) => {
+        if (modelsArr.includes(bike.model)) {
+          return true;
+        }
+
+        return false;
+      });
+    }
+
+    if (req.query.locations) {
+      let locationsArr = req.query.locations.split(",");
+      bikes = bikes.filter((bike) => {
+        for (let i = 0; i < bike.locations.length; i++) {
+          if (locationsArr.includes(bike.locations[i].name)) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+    }
+
     if (req.query.city) {
       bikes = bikes.filter((bike) => {
         bike.locations = bike.locations.filter((location) => {
