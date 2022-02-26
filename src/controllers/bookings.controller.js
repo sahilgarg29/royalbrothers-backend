@@ -7,9 +7,16 @@ const authenticate = require("../middlewares/authenticate");
 const router = express.Router();
 const crypto = require("crypto");
 
-router.get("/", async (req, res) => {
+router.get("/", authenticate, async (req, res) => {
   try {
-    const bookings = await Bookings.find({}).lean().exec();
+    const bookings = await Bookings.find({
+      user: req.user._id,
+      status: "success",
+    })
+      .populate("bike")
+      .populate("location")
+      .lean()
+      .exec();
     bookings.forEach((booking) => {
       console.log(booking.pickupTime.getDate());
     });
