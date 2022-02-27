@@ -65,7 +65,9 @@ router.post("/", authenticate, async (req, res) => {
     });
 
     var options = {
-      amount: hours * bike.pricePerHour * 100, // amount in the smallest currency unit
+      amount:
+        (hours * bike.pricePerHour + 500 + hours * bike.pricePerHour * 0.24) *
+        100, // amount in the smallest currency unit
       currency: "INR",
     };
     instance.orders.create(options, async function (err, order) {
